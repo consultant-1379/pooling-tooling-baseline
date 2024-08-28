@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.rptMongo.deploymentName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.rptMongo.label }}
+  replicas: {{ .Values.rptMongo.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rptMongo.label }}
+    spec:
+      containers:
+        - name: {{ .Values.rptMongo.containerName }}
+          image: {{ .Values.rptMongo.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          volumeMounts:
+          - mountPath: "/usr/local/rpt-mongodb-data"
+            name: rpt-mongo-volume
+          args:
+          - --dbpath
+          - /usr/local/rpt-mongodb-data
+          ports:
+            - containerPort: {{ .Values.rptMongo.port }}
+              hostPort: {{ .Values.rptMongo.port }}
+              protocol: TCP
+          resources:
+            requests:
+              memory: {{ .Values.rptMongo.resources.reqMemory }}
+              cpu: {{ .Values.rptMongo.resources.reqCpu }}
+            limits:
+              memory: {{ .Values.rptMongo.resources.limMemory }}
+              cpu: {{ .Values.rptMongo.resources.limCpu }}
+      volumes:
+      - name: rpt-mongo-volume
+        persistentVolumeClaim:
+          claimName: rpt-mongo-claim

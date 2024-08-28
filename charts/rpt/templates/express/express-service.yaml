@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rptExpress.serviceName }}
+  labels:
+    app: {{ .Values.rptExpress.serviceName }}
+spec:
+  selector:
+    app: {{ .Values.rptExpress.label }}
+  ports:
+    - port: {{ .Values.rptExpress.port }}
+      targetPort: {{ .Values.rptExpress.port }}

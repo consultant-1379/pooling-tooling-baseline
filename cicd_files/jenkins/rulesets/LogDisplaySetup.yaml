@@ -1,0 +1,68 @@
+modelVersion: 2.0
+
+description: 'Thunderbee: Rules for deploying ElasticSearch and Kibana to Elk Namespace'
+
+docker-images:
+  - helm: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/helm:3.5.4
+  - kubectl: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/bitnami/kubectl:1.20.8
+
+properties:
+  - NAMESPACE: elk
+  - CLUSTER_NAME: olah023
+  - CLUSTER_USER: default
+  - default-docker-flags: '--volume ${env.PWD}/.kube/config:/.kube/config
+      --volume ${env.PWD}/.kube:/.kube'
+
+env:
+  - PWD
+
+rules:
+  git-clean:
+    - task: git-clean
+      cmd: docker run --user "$(id -u):$(id -g)" --rm -v ${env.PWD}:/git/ armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/git:v2.32.0 clean -xdff
+
+  create-and-switch-to-log-context:
+    - task: create-context
+      docker-image: kubectl
+      docker-flags:
+        - ${default-docker-flags}
+      cmd: config set-context log --cluster=${CLUSTER_NAME} --user=${CLUSTER_USER} --namespace=${NAMESPACE}
+    - task: switch-context
+      docker-image: kubectl
+      docker-flags:
+        - ${default-docker-flags}
+      cmd: config use-context log
+
+  run-helm-install-elastic:
+    - task: add-elastic-helm-repo-and-run-install
+      docker-image: helm
+      docker-flags:
+        - '-u root'
+        - '--entrypoint=/bin/sh'
+      docker-mounts:
+        - '${env.PWD}/.kube/config:/root/.kube/config'
+      cmd: -c 'helm install elastic https://helm.elastic.co/helm/elasticsearch/elasticsearch-7.17.3.tgz --set readinessProbe.initialDelaySeconds=200 -n ${NAMESPACE}'
+
+  apply-elastic-ingress:
+    - task: apply-elastic-ingress
+      docker-image: kubectl
+      docker-flags:
+        - ${default-docker-flags}
+      cmd: apply -f /.kube/cicd_files/k8s/log-display-setup/ingressElastic.yaml -n ${NAMESPACE}
+
+  run-helm-install-kibana:
+    - task: add-elastic-helm-repo-and-run-install
+      docker-image: helm
+      docker-flags:
+        - '-u root'
+        - '--entrypoint=/bin/sh'
+      docker-mounts:
+        - '${env.PWD}/.kube/config:/root/.kube/config'
+      cmd: -c 'helm install kibana https://helm.elastic.co/helm/kibana/kibana-7.17.3.tgz --set readinessProbe.initialDelaySeconds=200 --set elasticsearchHosts=http://elasticsearch.olah023.rnd.gic.ericsson.se -n ${NAMESPACE}'
+
+  apply-kibana-ingress:
+    - task: apply-kibana-ingress
+      docker-image: kubectl
+      docker-flags:
+        - ${default-docker-flags}
+      cmd: apply -f /.kube/cicd_files/k8s/log-display-setup/ingressKibana.yaml -n ${NAMESPACE}

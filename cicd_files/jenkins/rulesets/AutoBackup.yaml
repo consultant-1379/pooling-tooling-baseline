@@ -1,0 +1,32 @@
+modelVersion: 2.0
+
+description: 'Ruleset for job to automatically backup RPT MongoDB database'
+
+properties:
+  - artifactory: https://arm.seli.gic.ericsson.se/artifactory/proj-eric-oss-dev-test-generic-local
+  - artifactory-subpath: rpt-backups/mongo/dumps
+
+env:
+  - PWD
+  - HOME
+  - FUNCTIONAL_USER_USERNAME
+  - FUNCTIONAL_USER_PASSWORD
+
+rules:
+  git-clean:
+    - task: git-clean
+      cmd: docker run --user "$(id -u):$(id -g)" --rm -v ${env.PWD}:/git/ armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/git:v2.32.0 clean -xdff
+
+  build-autobackup-script:
+    - task: build-autobackup-script
+      cmd: docker build -t rpt-autobackup ${env.PWD}/cicd_files/jenkins/scripts/autobackup
+
+  run-autobackup-script:
+    - task: run-autobackup-script
+      cmd: docker run --user "$(id -u):$(id -g)" -v ${env.PWD}:/usr/src/app/out --rm rpt-autobackup
+    - task: confirm-database-dump
+      cmd: /bin/bash -c "if [ ! -d ${env.PWD}/resourcePoolingToolDB ]; then echo 'Error, no dump file found'; exit 1; fi"
+
+  upload-database-dump:
+    - task: upload-database-dump
+      cmd: curl -X PUT -u "${env.FUNCTIONAL_USER_USERNAME}:${env.FUNCTIONAL_USER_PASSWORD}" -T dump-current.tar.gz ${artifactory}/${artifactory-subpath}/$(date "+%Y-%m-%d")/dump-$(date "+%Y-%m-%dT%H:%M:%S").tar.gz

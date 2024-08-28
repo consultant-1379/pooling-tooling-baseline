@@ -1,0 +1,77 @@
+modelVersion: 2.0
+
+description: "Thunderbee: Rules for releasing the RPT Baseline repo"
+
+docker-images:
+  - helm: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/helm:3.5.4
+  - bump: armdocker.rnd.ericsson.se/proj-eric-oss-dev-test/helm-chart-version-bump:1.0.0
+
+properties:
+  - chart-yaml-path: ./charts/rpt/Chart.yaml
+  - armdocker-repo-helm-path: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/helm:3.5.4
+  - armdocker-repo-bump-path: armdocker.rnd.ericsson.se/proj-eric-oss-dev-test/helm-chart-version-bump:1.0.0
+
+var:
+  - CHART_VERSION
+  - armdocker-repo-helm
+  - armdocker-repo-bump
+
+env:
+  - HELM_CHART_REPO_USER
+  - HELM_CHART_REPO_KEY
+  - PWD
+  - WORKSPACE
+  - GERRIT_CENTRAL
+
+rules:
+  set-path-env-variables:
+    - task: set-path-to-armdocker-repo-helm
+      cmd: echo ${armdocker-repo-helm-path} > .bob/var.armdocker-repo-helm
+    - task: set-path-to-armdocker-repo-bump
+      cmd: echo ${armdocker-repo-bump-path} > .bob/var.armdocker-repo-bump
+
+  bump-chart-dot-yaml-version:
+    - task: bump-chart-version
+      docker-image: bump
+      docker-flags:
+        - "--workdir /usr/src/app"
+      docker-mounts:
+        - "${env.PWD}:/usr/src/app"
+      cmd: pybump bump --file ${chart-yaml-path} --level minor > VERSION
+
+  set-chart-version-env-variable:
+    - task: set-version-from-generated-version-file
+      cmd: cat ./VERSION > .bob/var.CHART_VERSION
+
+  package-rpt-chart:
+    - task: helm-package
+      docker-image: helm
+      cmd: package charts/rpt
+
+  publish-rpt-chart:
+    - task: helm-push
+      cmd: curl -u "${env.HELM_CHART_REPO_USER}:${env.HELM_CHART_REPO_KEY}" -T rpt-chart-${var.CHART_VERSION}.tgz "https://arm.seli.gic.ericsson.se/artifactory/proj-rpt-baseline-helm/rpt-chart-${var.CHART_VERSION}.tgz" || exit 1
+
+  add-chart-version-change:
+    - task: git-add
+      cmd: git add ${chart-yaml-path}
+
+  push-chart-version-change:
+    - task: git-commit
+      cmd: git commit -m "Version ${var.CHART_VERSION}"
+    - task: git-tag
+      cmd: git tag -a "${var.CHART_VERSION}" -m "version ${var.CHART_VERSION}"
+    - task: git-rebase
+      cmd: git rebase HEAD gcn/master
+    - task: git-push-master-branch
+      cmd: git push ${env.GERRIT_CENTRAL}/OSS/com.ericsson.oss.ci/pooling-tooling-baseline HEAD:master
+    - task: git-push-tags
+      cmd: git push --tags ${env.GERRIT_CENTRAL}/OSS/com.ericsson.oss.ci/pooling-tooling-baseline
+
+  clean-up-docker-image:
+    - task: kill-versioned-image
+      cmd: "docker kill ${var.armdocker-repo-helm} || true"
+      cmd: "docker kill ${var.armdocker-repo-bump} || true"
+    - task: remove-versioned-image
+      cmd: "docker rmi ${var.armdocker-repo-helm} || true"
+      cmd: "docker rmi ${var.armdocker-repo-bump} || true"

@@ -1,0 +1,104 @@
+{
+  "application": "resourcepoolingtoolapp",
+  "keepWaitingPipelines": false,
+  "limitConcurrent": true,
+  "name": "RPT-BASELINE",
+  "locked": {
+    "allowUnlockUi": true,
+    "description": "",
+    "ui": true
+  },
+  "spelEvaluator": "v4",
+  "stages": [
+    {
+      "continuePipeline": false,
+      "failPipeline": true,
+      "job": "resource-pooling-tool-baseline_Build_and_Publish",
+      "master": "oss-fem5s11-eiffel216",
+      "name": "RPT Baseline Build and Publish",
+      "parameters": {},
+      "refId": "RPT Baseline Build and Publish",
+      "requisiteStageRefIds": [],
+      "type": "jenkins"
+    },
+    {
+      "continuePipeline": false,
+      "failPipeline": true,
+      "job": "resource-pooling-tool-baseline_Staging",
+      "master": "oss-fem5s11-eiffel216",
+      "name": "RPT Baseline Staging",
+      "parameters": {},
+      "refId": "RPT Baseline Staging",
+      "requisiteStageRefIds": ["RPT Baseline Build and Publish"],
+      "type": "jenkins"
+    },
+    {
+      "continuePipeline": false,
+      "failPipeline": true,
+      "job": "resource-pooling-tool_Staging_Tests",
+      "master": "oss-fem5s11-eiffel216",
+      "name": "RPT Staging Tests",
+      "parameters": {},
+      "refId": "RPT Staging Tests",
+      "requisiteStageRefIds": ["RPT Baseline Staging"],
+      "type": "jenkins"
+    },
+    {
+      "failOnFailedExpressions": true,
+      "failPipeline": true,
+      "continuePipeline": false,
+      "instructions": "Approve or Deny",
+      "judgmentInputs": [],
+      "name": "RPT Approve Upgrade",
+      "refId": "RPT Approve Upgrade",
+      "notifications": [
+        {
+          "address": "19df51be.ericsson.onmicrosoft.com@emea.teams.ms",
+          "level": "stage",
+          "message": {
+            "manualJudgmentContinue": {
+              "text": "RPT Upgrade Approved"
+            }
+          },
+          "type": "email",
+          "when": [
+            "manualJudgment",
+            "manualJudgmentContinue"
+          ]
+        }
+      ],
+      "sendNotifications": true,
+      "requisiteStageRefIds": ["RPT Staging Tests"],
+      "stageEnabled": {
+        "expression": "'${#stage('RPT Staging Tests')['status']}' == 'SUCCEEDED'",
+        "type": "expression"
+      },
+      "stageTimeoutMs": 7200000,
+      "type": "manualJudgment"
+    },
+    {
+      "continuePipeline": false,
+      "failPipeline": true,
+      "job": "resource-pooling-tool-baseline_Upgrade",
+      "master": "oss-fem5s11-eiffel216",
+      "name": "RPT Baseline Upgrade",
+      "parameters": {},
+      "refId": "RPT Baseline Upgrade",
+      "requisiteStageRefIds": ["RPT Approve Upgrade"],
+      "type": "jenkins",
+      "stageEnabled": {
+        "expression": "'${#stage('RPT Approve Upgrade')['status']}' == 'SUCCEEDED'",
+        "type": "expression"
+      }
+    }
+  ],
+  "triggers": [
+    {
+      "enabled": true,
+      "job": "resource-pooling-tool-baseline_Spinnaker_Pipeline_DSL_Updater",
+      "master": "oss-fem5s11-eiffel216",
+      "propertyFile": "",
+      "type": "jenkins"
+    }
+  ]
+}

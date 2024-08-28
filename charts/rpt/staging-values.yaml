@@ -1,0 +1,72 @@
+imagePullPolicy: Always
+
+coreConfig:
+  configMap: core-config
+  namespace: rpt-staging
+  nodeEnv: STAG
+  hostName: https//rpt-staging.ews.gic.ericsson.se*
+
+tbFuncUserCredentialsSecret: tb-func-user-armdocker
+
+rptAngular:
+  deploymentName: angular-deployment
+  serviceName: angular
+  containerName: rpt-angular
+  label: angular-server
+  replicas: 1
+  image: armdocker.rnd.ericsson.se/proj-eric-oss-dev-test/rpt_client:latest
+  port: 80
+  resources:
+    reqMemory: '64Mi'
+    reqCpu: '100m'
+    limMemory: '256Mi'
+    limCpu: '250m'
+
+rptExpress:
+  deploymentName: express-deployment
+  serviceName: express
+  containerName: rpt-express
+  label: express-server
+  replicas: 1
+  image: armdocker.rnd.ericsson.se/proj-eric-oss-dev-test/rpt_server:latest
+  port: 3000
+  resources:
+    reqMemory: '64Mi'
+    reqCpu: '100m'
+    limMemory: '256Mi'
+    limCpu: '250m'
+
+rptSwagger:
+  deploymentName: swagger-deployment
+  serviceName: swagger
+  containerName: rpt-swagger
+  label: swagger-server
+  replicas: 1
+  image: armdocker.rnd.ericsson.se/proj-eric-oss-dev-test/rpt_swagger:latest
+  port: 3000
+  resources:
+    reqMemory: '64Mi'
+    reqCpu: '100m'
+    limMemory: '256Mi'
+    limCpu: '250m'
+
+rptMongo:
+  deploymentName: mongo-deployment
+  serviceName: database
+  containerName: rpt-mongo
+  label: mongo-server
+  replicas: 1
+  image: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/mongo:4.2.2
+  port: 27017
+  targetPort: 27017
+  resources:
+    reqMemory: '256Mi'
+    reqCpu: '250m'
+    limMemory: '1024Mi'
+    limCpu: '750m'
+
+rptIngress:
+  hostName: rpt-staging.ews.gic.ericsson.se
+  podName: ingress-deployment
+  namespaceName: rpt-staging
+  sslCertName: rpt-staging-only-cert

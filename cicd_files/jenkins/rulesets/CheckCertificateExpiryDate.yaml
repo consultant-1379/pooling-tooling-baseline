@@ -1,0 +1,25 @@
+modelVersion: 2.0
+
+description: 'Thunderbee: Rules for getting certificate expiry'
+
+docker-images:
+  - kubectl: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/bitnami/kubectl:1.20.8
+
+env:
+  - PWD
+
+properties:
+  - secret-id: "rpt-production"
+
+rules:
+  check-certificate-expiry:
+    - task: check-expiry
+      docker-image: kubectl
+      docker-mounts:
+        - '${env.PWD}/.kube/config:/.kube/config'
+        - '${env.PWD}/.scripts:/.scripts'
+      cmd: get secret ${secret-id}-only-cert -n ${secret-id} -o jsonpath="{.data.tls\.crt}" |
+           base64 --decode |
+           openssl x509 -noout -enddate |
+           awk -F'=' '{print $2}' |
+           python3 ./.scripts/check_certs.py

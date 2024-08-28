@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.rptAngular.deploymentName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.rptAngular.label }}
+  replicas: {{ .Values.rptAngular.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rptAngular.label }}
+        helm-revision: "{{ .Release.Revision }}"
+    spec:
+      containers:
+        - name: {{ .Values.rptAngular.containerName }}
+          image: {{ .Values.rptAngular.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.rptAngular.port }}
+              protocol: TCP
+          resources:
+            requests:
+              memory: {{ .Values.rptAngular.resources.reqMemory }}
+              cpu: {{ .Values.rptAngular.resources.reqCpu }}
+            limits:
+              memory: {{ .Values.rptAngular.resources.limMemory }}
+              cpu: {{ .Values.rptAngular.resources.limCpu }}
+      imagePullSecrets:
+        - name: {{ .Values.tbFuncUserCredentialsSecret }}

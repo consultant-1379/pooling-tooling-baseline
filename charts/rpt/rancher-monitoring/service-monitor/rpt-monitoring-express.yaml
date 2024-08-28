@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rpt-monitoring-express
+  namespace: monitoring
+  labels:
+    app: rpt-monitoring-express
+spec:
+  selector:
+    matchLabels:
+       app: express-metrics
+  namespaceSelector:
+    matchNames:
+    - rpt-production
+    any: true
+  endpoints:
+  - port: metrics
+  interval: 30s
+  scheme: https

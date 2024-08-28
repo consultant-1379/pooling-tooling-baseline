@@ -1,0 +1,50 @@
+modelVersion: 2.0
+
+description: 'Thunderbee: Rules for deploying RPT to the Staging Namespace'
+
+docker-images:
+  - helm: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/helm:3.5.4
+  - kubectl: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/bitnami/kubectl:1.20.8
+
+properties:
+  - ARM: https://arm.seli.gic.ericsson.se/artifactory
+  - REPO: proj-rpt-baseline-helm
+  - CLUSTER_NAME: olah023
+  - CLUSTER_USER: default
+  - CHART_YAML_PATH: https://${env.TB_GERRIT_CREDS}@gerrit-gamma.gic.ericsson.se/a/gitweb?p=OSS/com.ericsson.oss.ci/pooling-tooling-baseline.git;a=blob_plain;f=charts/rpt/staging-values.yaml;hb=refs/heads/master
+  - default-docker-flags: '--volume ${env.PWD}/.kube/config:/.kube/config
+      --volume ${env.PWD}/.kube:/.kube'
+env:
+  - HELM_CHART_REPO_USER
+  - HELM_CHART_REPO_KEY
+  - TB_GERRIT_CREDS
+  - PWD
+
+rules:
+  create-and-switch-to-staging-context:
+    - task: create-context
+      docker-image: kubectl
+      docker-flags:
+        - ${default-docker-flags}
+      cmd: config set-context stag --cluster=${CLUSTER_NAME} --user=${CLUSTER_USER} --namespace=rpt-staging
+    - task: switch-context
+      docker-image: kubectl
+      docker-flags:
+        - ${default-docker-flags}
+      cmd: config use-context stag
+
+  run-helm-upgrade:
+    - task: add-rpt-helm-repo-and-run-upgrade
+      docker-image: helm
+      docker-flags:
+        - '-u root'
+        - '--entrypoint=/bin/sh'
+      docker-mounts:
+        - '${env.PWD}/.kube/config:/root/.kube/config'
+      cmd: -c "helm repo add ${REPO} '${ARM}/${REPO}'
+        --username '${env.HELM_CHART_REPO_USER}'
+        --password '${env.HELM_CHART_REPO_KEY}';
+        helm repo update;
+        helm upgrade
+        -f '${CHART_YAML_PATH}' rpt-chart ${REPO}/rpt-chart"
+        --atomic

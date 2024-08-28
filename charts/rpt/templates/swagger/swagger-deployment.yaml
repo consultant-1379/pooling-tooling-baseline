@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.rptSwagger.deploymentName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.rptSwagger.label }}
+  replicas: {{ .Values.rptSwagger.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rptSwagger.label }}
+        helm-revision: "{{ .Release.Revision }}"
+    spec:
+      containers:
+        - name: {{ .Values.rptSwagger.containerName }}
+          image: {{ .Values.rptSwagger.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.rptSwagger.port }}
+              protocol: TCP
+          resources:
+            requests:
+              memory: {{ .Values.rptSwagger.resources.reqMemory }}
+              cpu: {{ .Values.rptSwagger.resources.reqCpu }}
+            limits:
+              memory: {{ .Values.rptSwagger.resources.limMemory }}
+              cpu: {{ .Values.rptSwagger.resources.limCpu }}
+      imagePullSecrets:
+        - name: {{ .Values.tbFuncUserCredentialsSecret }}

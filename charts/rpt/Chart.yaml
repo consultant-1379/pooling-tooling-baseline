@@ -1,0 +1,14 @@
+apiVersion: v2
+appVersion: 1.0.0
+deprecated: false
+description: Resource Pooling Tool's Helm Chart
+icon: https://rpt.ews.gic.ericsson.se/favicon.ico
+maintainers:
+- email: PDLENMCOUN@pdl.internal.ericsson.com
+  name: Thunderbee
+  url: https://eteamspace.internal.ericsson.com/x/VxRke
+name: rpt-chart
+sources:
+- https://gerrit-gamma.gic.ericsson.se/#/admin/projects/OSS/com.ericsson.oss.ci/pooling-tooling
+type: application
+version: 1.170.0

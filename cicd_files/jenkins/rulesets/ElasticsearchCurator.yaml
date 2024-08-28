@@ -1,0 +1,19 @@
+modelVersion: 2.0
+
+description: 'Ruleset for job to cleanup indices older than 30 days using Elasticsearch Curator'
+
+env:
+  - PWD
+
+rules:
+  git-clean:
+    - task: git-clean
+      cmd: docker run --user "$(id -u):$(id -g)" --rm -v ${env.PWD}:/git/ armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/git:v2.32.0 clean -xdff
+
+  build-elasticseacrh-curator:
+    - task: build-elasticseacrh-curator
+      cmd: docker build -t rpt-curator -f ${env.PWD}/cicd_files/jenkins/scripts/elasticsearch-curator/Dockerfile .
+
+  run-elasticseacrh-curator:
+    - task: run-elasticseacrh-curator
+      cmd: docker run --user "$(id -u):$(id -g)" --name rpt-curator-delete-index rpt-curator

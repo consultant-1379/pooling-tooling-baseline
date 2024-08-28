@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rptSwagger.serviceName }}
+  labels:
+    app: {{ .Values.rptSwagger.serviceName }}
+spec:
+  selector:
+    app: {{ .Values.rptSwagger.label }}
+  ports:
+    - port: {{ .Values.rptSwagger.port }}
+      targetPort: {{ .Values.rptSwagger.port }}

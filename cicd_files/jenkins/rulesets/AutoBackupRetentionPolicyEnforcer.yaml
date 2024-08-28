@@ -1,0 +1,21 @@
+modelVersion: 2.0
+
+description: 'Ruleset for job to enforce backup retention policy for RPT MongoDB database'
+
+env:
+  - PWD
+  - FUNCTIONAL_USER_USERNAME
+  - FUNCTIONAL_USER_PASSWORD
+
+rules:
+  git-clean:
+    - task: git-clean
+      cmd: docker run --user "$(id -u):$(id -g)" --rm -v ${env.PWD}:/git/ armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/git:v2.32.0 clean -xdff
+
+  build-retention-policy-enforcer-script:
+    - task: build-retention-policy-enforcer-script
+      cmd: docker build -t rpt-retention-policy-enforcer ${env.PWD}/cicd_files/jenkins/scripts/autobackup-retention-policy
+
+  run-retention-policy-enforcer-script:
+    - task: run-retention-policy-enforcer-script
+      cmd: docker run --user "$(id -u):$(id -g)" -e FUNCTIONAL_USER_USERNAME="${env.FUNCTIONAL_USER_USERNAME}" -e FUNCTIONAL_USER_PASSWORD="${env.FUNCTIONAL_USER_PASSWORD}" rpt-retention-policy-enforcer

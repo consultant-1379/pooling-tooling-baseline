@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.rptExpress.deploymentName }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.rptExpress.label }}
+  replicas: {{ .Values.rptExpress.replicas }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.rptExpress.label }}
+        helm-revision: "{{ .Release.Revision }}"
+    spec:
+      containers:
+        - name: {{ .Values.rptExpress.containerName }}
+          image: {{ .Values.rptExpress.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.coreConfig.configMap }}
+                  key: NODE_ENV
+            - name: TB_FUNCTIONAL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: tb-func-user
+                  key: USERNAME
+            - name: TB_FUNCTIONAL_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tb-func-user
+                  key: PASSWORD
+            - name: TB_ARM_USER
+              valueFrom:
+                secretKeyRef:
+                  name: tb-func-user-arm-tokens
+                  key: USERNAME
+            - name: TB_ARM_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tb-func-user-arm-tokens
+                  key: SELI_TOKEN
+            - name: RPT_ELASTICSEARCH_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: elasticsearch-host
+                  key: RPT_ELASTICSEARCH_HOST
+            - name: RIGEL_ELASTICSEARCH_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: rigel-elasticsearch-host
+                  key: RIGEL_ELASTICSEARCH_HOST
+            - name: SECURE_RIGEL_ELASTICSEARCH_HOST_USER
+              valueFrom:
+                secretKeyRef:
+                  name: secure-elasticsearch-host-user
+                  key: USERNAME
+            - name: SECURE_RIGEL_ELASTICSEARCH_HOST_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secure-elasticsearch-host-user
+                  key: PASSWORD
+            - name: SECURE_RIGEL_ELASTICSEARCH_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: secure-rigel-elasticsearch-host
+                  key: SECURE_RIGEL_ELASTICSEARCH_HOST
+          ports:
+            - containerPort: {{ .Values.rptExpress.port }}
+              protocol: TCP
+          resources:
+            requests:
+              memory: {{ .Values.rptExpress.resources.reqMemory }}
+              cpu: {{ .Values.rptExpress.resources.reqCpu }}
+            limits:
+              memory: {{ .Values.rptExpress.resources.limMemory }}
+              cpu: {{ .Values.rptExpress.resources.limCpu }}
+      imagePullSecrets:
+        - name: {{ .Values.tbFuncUserCredentialsSecret }}

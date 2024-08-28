@@ -1,0 +1,12 @@
+modelVersion: 2.0
+
+description: "Thunderbee: Rules for running pre code review for the Pooling Tooling Baseline repo"
+
+docker-images:
+  - helm: armdocker.rnd.ericsson.se/dockerhub-ericsson-remote/alpine/helm:3.5.4
+
+rules:
+  run-helm-linting:
+    - task: helm-linting
+      docker-image: helm
+      cmd: lint charts/rpt

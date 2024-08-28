@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.rptAngular.serviceName }}
+  labels:
+    app: {{ .Values.rptAngular.serviceName }}
+spec:
+  selector:
+    app: {{ .Values.rptAngular.label }}
+  ports:
+    - port: {{ .Values.rptAngular.port }}
+      targetPort: {{ .Values.rptAngular.port }}

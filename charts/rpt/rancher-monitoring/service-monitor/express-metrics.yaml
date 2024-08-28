@@ -1,0 +1,16 @@
+# Service targeting rpt express
+apiVersion: v1
+kind: Service
+metadata:
+  name: express-metrics
+  namespace: rpt-production
+  labels:
+    app: express-metrics
+spec:
+  ports:
+  - name: metrics
+    port: 3000
+    targetPort: metrics
+    protocol: TCP
+  selector:
+    app: express-server
